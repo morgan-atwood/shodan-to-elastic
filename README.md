@@ -1,3 +1,4 @@
+
 # Shodan to Elastic
 
 Stream Shodan Monitor data into Elasticsearch using a lightweight forwarder + Elastic Agent.
@@ -30,6 +31,10 @@ This project streams Shodan alert data to a local file for ingestion into Elasti
 4. **Check logs and output:**
 	- Service logs: `journalctl -u shodan-forwarder -f`
 	- Output file: `/var/log/shodan/stream.ndjson`
+
+## Elasticsearch Setup
+
+To configure the ingest pipeline and index template, simply copy the contents of `ingest_pipeline.txt` and `index_template.txt` into the Kibana Dev Tools console and run them. This will set up the required pipeline and index template in your Elasticsearch instance.
 
 ### Elastic Agent Policy Setup
 
