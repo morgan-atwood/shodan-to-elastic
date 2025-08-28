@@ -1,0 +1,255 @@
+PUT _ingest/pipeline/shodan_monitor_pipeline
+{
+  "description": "Normalize Shodan Monitor fields (server/dest, geo, alert info)",
+  "processors": [
+    {
+      "date": {
+        "ignore_failure": true,
+        "formats": [
+          "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        ],
+        "field": "timestamp"
+      }
+    },
+    {
+      "set": {
+        "field": "event.module",
+        "value": "shodan"
+      }
+    },
+    {
+      "set": {
+        "field": "event.dataset",
+        "value": "shodan.monitor"
+      }
+    },
+    {
+      "set": {
+        "field": "event.kind",
+        "value": "event"
+      }
+    },
+    {
+      "set": {
+        "field": "observer.vendor",
+        "value": "Shodan"
+      }
+    },
+    {
+      "set": {
+        "field": "observer.type",
+        "value": "scanner"
+      }
+    },
+    {
+      "rename": {
+        "ignore_missing": true,
+        "field": "ip_str",
+        "target_field": "server.ip"
+      }
+    },
+    {
+      "rename": {
+        "ignore_missing": true,
+        "field": "port",
+        "target_field": "server.port"
+      }
+    },
+    {
+      "set": {
+        "ignore_empty_value": true,
+        "field": "network.transport",
+        "copy_from": "transport"
+      }
+    },
+    {
+      "convert": {
+        "ignore_missing": true,
+        "field": "server.port",
+        "type": "integer"
+      }
+    },
+    {
+      "convert": {
+        "field": "location.latitude",
+        "type": "float",
+        "ignore_missing": true
+      }
+    },
+    {
+      "convert": {
+        "field": "location.longitude",
+        "type": "float",
+        "ignore_missing": true
+      }
+    },
+    {
+      "script": {
+        "source": "ctx.geo = (ctx.geo instanceof Map) ? ctx.geo : new HashMap(); ctx.geo.location = ['lat': ctx.location.latitude, 'lon': ctx.location.longitude];",
+        "lang": "painless",
+        "if": "ctx?.location?.latitude != null && ctx?.location?.longitude != null"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "field": "geo",
+        "target_field": "server.geo",
+        "if": "ctx?.location?.latitude != null && ctx?.location?.longitude != null"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "_shodan",
+        "target_field": "shodan"
+      }
+    },
+    {
+      "rename": {
+        "ignore_missing": true,
+        "field": "shodan.alert.name",
+        "target_field": "rule.name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_missing": true,
+        "field": "shodan.alert.id",
+        "target_field": "rule.id"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "asn",
+        "target_field": "server.as.number"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "isp",
+        "target_field": "server.as.organization.name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "org",
+        "target_field": "server.as.organization.name"
+      }
+    },
+    {
+      "set": {
+        "field": "server.geo.region_iso_code",
+        "value": "{{location.country_code}}-{{location.region_code}}"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.city",
+        "target_field": "server.geo.city_name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.country_name",
+        "target_field": "server.geo.country_name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.country_name",
+        "target_field": "server.geo.country_name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.region_code",
+        "target_field": "server.geo.region_code"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.country_name",
+        "target_field": "server.geo.country_name"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "location.country_code",
+        "target_field": "server.geo.country_iso_code"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "hostnames",
+        "target_field": "shodan.hostnames"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "domains",
+        "target_field": "server.registered_domain"
+      }
+    },
+    {
+      "rename": {
+        "ignore_missing": true,
+        "field": "data",
+        "target_field": "shodan.data"
+      }
+    },
+    {
+      "rename": {
+        "ignore_failure": true,
+        "ignore_missing": true,
+        "field": "hash",
+        "target_field": "shodan.hash"
+      }
+    },
+    {
+      "remove": {
+        "field": [
+          "timestamp",
+          "transport",
+          "as",
+          "location",
+          "ip",
+          "isp",
+          "org"
+        ],
+        "ignore_missing": true
+      }
+    }
+  ],
+  "on_failure": [
+    {
+      "set": {
+        "field": "error.message",
+        "value": "{{ _ingest.on_failure_message }}"
+      }
+    }
+  ]
+}

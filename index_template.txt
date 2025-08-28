@@ -1,0 +1,48 @@
+PUT _index_template/logs-shodan.monitor
+{
+  "template": {
+    "settings": {
+      "index": {
+        "mode": "logsdb"
+      }
+    },
+    "mappings": {
+      "_source": {
+        "mode": "synthetic"
+      },
+      "properties": {
+        "shodan": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword"
+                }
+              }
+            },
+            "hash": {
+              "type": "keyword"
+            },
+            "module": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  },
+  "index_patterns": [
+    "logs-shodan.monitor-*"
+  ],
+  "data_stream": {
+    "hidden": false,
+    "allow_custom_routing": false
+  },
+  "composed_of": [
+    "logs@settings",
+    "ecs@mappings"
+  ],
+  "ignore_missing_component_templates": []
+}
