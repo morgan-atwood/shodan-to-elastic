@@ -41,12 +41,49 @@ EOF
 sudo chmod 600 /etc/default/shodan-forwarder
 
 echo "[*] Installing systemd service..."
-sudo cp shodan-forwarder.service /etc/systemd/system/
+
+sudo tee /etc/systemd/system/shodan-forwarder.service > /dev/null <<'EOF'
+[Unit]
+Description=Shodan Forwarder
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/shodan-forwarder
+ExecStart=/usr/bin/python3 /opt/shodan-forwarder/shodan_forwarder.py
+# Send stdout to the rotating file; keep errors in journal
+StandardOutput=append:/var/log/shodan/stream.ndjson
+StandardError=journal
+Restart=on-failure
+RestartSec=5
+# Hardening (tune as needed)
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 sudo systemctl daemon-reload
 sudo systemctl enable --now shodan-forwarder
 
 echo "[*] Installing logrotate config..."
-sudo cp shodan-forwarder.logrotate /etc/logrotate.d/shodan-forwarder
+sudo tee /etc/logrotate.d/shodan-forwarder > /dev/null <<'EOF'
+/var/log/shodan/stream.ndjson {
+  daily
+  rotate 14
+  missingok
+  notifempty
+  compress
+  delaycompress
+  copytruncate
+  create 0640 root adm
+}
+EOF
+
 
 echo "[*] Done!"
 echo "Check logs:   journalctl -u shodan-forwarder -f"
