@@ -11,7 +11,7 @@ OUT_DIR = "/var/log/shodan"
 OUT_FILE = os.path.join(OUT_DIR, "stream.ndjson")
 
 def stream():
-    timeout = (5, None)  # 5s connect, infinite read
+    timeout = (60, None)  # 60s connect
     headers = {"Accept": "application/json"}
     with requests.Session() as s:
         s.headers.update(headers)
